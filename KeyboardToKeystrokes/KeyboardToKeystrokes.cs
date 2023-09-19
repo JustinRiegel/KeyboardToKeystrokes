@@ -1,22 +1,14 @@
 using KeyboardToKeystrokes.Interfaces;
 using KeyboardToKeystrokes.Models;
-using Melanchall.DryWetMidi.Common;
 using Melanchall.DryWetMidi.Core;
 using Melanchall.DryWetMidi.Multimedia;
-using System.Linq;
-using System.Text;
-using System.Text.Json;
 
 namespace KeyboardToKeystrokes
 {
     public partial class KeyboardToKeystrokes : Form
     {
-        //private const string MAPPINGS_FILE_NAME = $"{nameof(KeyboardToKeystrokes)}Mappings.json";
-        //private const string MAPPINGS_BACKUP_FILE_NAME = $"{nameof(KeyboardToKeystrokes)}Mappings.json.bak";
-
         private IInputDevice? _inputDevice;
         private List<string> _inputLogMessages = new List<string>();
-        //private KeyMappingsList _keyMappingsJsonList = new KeyMappingsList();
         private Dictionary<int, char> _keyMappingsDictionary = new Dictionary<int, char>();
         private IMappingsManager _mappingsManager = new MappingsManager();
 
@@ -71,21 +63,14 @@ namespace KeyboardToKeystrokes
                 {
                     if (_keyMappingsDictionary.ContainsKey(noteNumberInt))
                     {
-                        //Console.WriteLine($"Event received: {midiDevice.Name}, {e.Event}");
-                        //Console.WriteLine($"Note number: {((NoteOnEvent)e.Event).NoteNumber}");
                         AddInputLogMessages($"Note number: {noteEvent.NoteNumber}, key: {_keyMappingsDictionary[noteNumberInt]}");
 
                         inputLogTextBox.Invoke(() => inputLogTextBox.Lines = _inputLogMessages.ToArray());
+
+                        SendKeys.SendWait(Char.ToLower(_keyMappingsDictionary[noteNumberInt]).ToString());
                     }
                 }
             }
-
-            //if (e.Event is NoteOnEvent && ((NoteOnEvent)e.Event).NoteNumber == SevenBitNumber.Parse("60"))
-            //{
-            //    //Console.WriteLine("middle c");
-            //    //inputLogTextBox.Text += "mid-C ";
-            //    //SendKeys.SendWait("C");
-            //}
         }
 
         private void AddInputLogMessages(string message)

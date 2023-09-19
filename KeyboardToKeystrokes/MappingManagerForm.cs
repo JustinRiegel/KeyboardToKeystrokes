@@ -3,15 +3,6 @@ using KeyboardToKeystrokes.Models;
 using Melanchall.DryWetMidi.Common;
 using Melanchall.DryWetMidi.Core;
 using Melanchall.DryWetMidi.Multimedia;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace KeyboardToKeystrokes
 {
@@ -43,9 +34,6 @@ namespace KeyboardToKeystrokes
             {
                 KeyMappingsDictionary = _mappingsManager.LoadMappingsFromFile();
             }
-
-            //keyboardMappingAssignmentButton.KeyPress -= keyboardMappingAssignmentButton_KeyPress;
-
             _deviceWasListeningOnEntry = _inputDevice.IsListeningForEvents;
 
             this.HandleCreated += MappingManagerForm_HandleCreated;
@@ -96,21 +84,6 @@ namespace KeyboardToKeystrokes
 
                 SetMidiNoteMappingAssignmentButtonText(Constants.CLICK_TO_LISTEN_MIDI_NOTE);
             }
-            else if (e.KeyCode == Keys.Enter && _midiNoteRecorded && _keyboardKeyRecorded)
-            {
-                SetMidiEventsOnOff(false);
-
-                SetAddMappingButtonEnabled(true);
-                addMappingButton_Click(sender, e);
-            }
-        }
-
-        private void midiNoteMappingAssignmentButton_KeyPress(object? sender, KeyPressEventArgs e)
-        {
-            if (!_keyboardKeyRecorded)
-            {
-                keyboardMappingAssignmentButton_KeyPress(sender, e);
-            }
         }
 
         private void MidiMappingAssignmentEventReceived(object? sender, MidiEventReceivedEventArgs e)
@@ -133,7 +106,13 @@ namespace KeyboardToKeystrokes
                 _midiNoteRecorded = true;
                 if (!_keyboardKeyRecorded)
                 {
+                    SetFocusToElement(keyboardMappingAssignmentButton);
                     keyboardMappingAssignmentButton_Click(sender, e);
+                }
+                else if (_midiNoteRecorded && _keyboardKeyRecorded)
+                {
+                    SetAddMappingButtonEnabled(true);
+                    SetFocusToElement(addMappingButton);
                 }
             }
             else if (e.Event.EventType != MidiEventType.TimingClock && e.Event.EventType != MidiEventType.ActiveSensing)
@@ -142,8 +121,6 @@ namespace KeyboardToKeystrokes
                 _inputDevice.EventReceived -= MidiMappingAssignmentEventReceived;
                 _inputDevice.StopEventsListening();
             }
-
-            //TODO refactor these buttons into 1 button that just kicks off the midi listening event and has a keydown/keypress listener?
         }
 
         private void SetMidiEventsOnOff(bool enable)
@@ -151,13 +128,11 @@ namespace KeyboardToKeystrokes
             if (enable)
             {
                 _inputDevice.EventReceived += MidiMappingAssignmentEventReceived;
-                midiNoteMappingAssignmentButton.KeyPress += midiNoteMappingAssignmentButton_KeyPress;
                 midiNoteMappingAssignmentButton.KeyDown += midiNoteMappingAssignmentButton_KeyDown;
             }
             else
             {
                 _inputDevice.EventReceived -= MidiMappingAssignmentEventReceived;
-                midiNoteMappingAssignmentButton.KeyPress -= midiNoteMappingAssignmentButton_KeyPress;
                 midiNoteMappingAssignmentButton.KeyDown -= midiNoteMappingAssignmentButton_KeyDown;
             }
         }
@@ -183,13 +158,14 @@ namespace KeyboardToKeystrokes
             _keyboardKeyRecorded = true;
             if (!_midiNoteRecorded)
             {
+                SetFocusToElement(midiNoteMappingAssignmentButton);
                 midiNoteMappingAssignmentButton_Click(sender, e);
             }
             else if (_midiNoteRecorded && _keyboardKeyRecorded)
             {
                 SetAddMappingButtonEnabled(true);
+                SetFocusToElement(addMappingButton);
             }
-
         }
 
         private void keyboardMappingAssignmentButton_KeyDown(object? sender, KeyEventArgs e)
@@ -199,13 +175,6 @@ namespace KeyboardToKeystrokes
                 SetKeyboardEventsOnOff(false);
 
                 SetKeyboardKeyMappingAssignmentButtonText(Constants.CLICK_TO_LISTEN_KEYSTROKE);
-            }
-            else if (e.KeyCode == Keys.Enter && _midiNoteRecorded && _keyboardKeyRecorded)
-            {
-                SetKeyboardEventsOnOff(false);
-
-                SetAddMappingButtonEnabled(true);
-                addMappingButton_Click(sender, e);
             }
         }
 
@@ -226,6 +195,11 @@ namespace KeyboardToKeystrokes
         #endregion
 
         #region Set form object properties
+
+        private void SetFocusToElement(Control ctrl)
+        {
+            ctrl.Invoke(() => ctrl.Focus());
+        }
 
         private void SetMidiNoteMappingAssignmentButtonText(string text)
         {
@@ -280,6 +254,7 @@ namespace KeyboardToKeystrokes
             }
 
             ResetMappingButtonStates();
+            SetFocusToElement(midiNoteMappingAssignmentButton);
         }
 
         private void deleteMappingButton_Click(object sender, EventArgs e)

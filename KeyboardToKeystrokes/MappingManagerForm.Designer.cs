@@ -49,7 +49,6 @@
             midiNoteMappingAssignmentButton.UseVisualStyleBackColor = true;
             midiNoteMappingAssignmentButton.Click += midiNoteMappingAssignmentButton_Click;
             midiNoteMappingAssignmentButton.KeyDown += midiNoteMappingAssignmentButton_KeyDown;
-            midiNoteMappingAssignmentButton.KeyPress += midiNoteMappingAssignmentButton_KeyPress;
             // 
             // keyboardMappingAssignmentButton
             // 
