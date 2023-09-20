@@ -11,8 +11,10 @@ namespace KeyboardToKeystrokes
         private List<string> _inputLogMessages = new List<string>();
         private Dictionary<int, char> _keyMappingsDictionary = new Dictionary<int, char>();
         private IMappingsManager _mappingsManager = new MappingsManager();
-
         private bool _inputDeviceIsSelected = false;
+        private bool _chordTimerIsRunning = false;
+
+        private string _chordCollection = string.Empty;
 
         public KeyboardToKeystrokes()
         {
@@ -148,11 +150,31 @@ namespace KeyboardToKeystrokes
                 {
                     if (_keyMappingsDictionary.ContainsKey(noteNumberInt))
                     {
-                        AddInputLogMessages($"Note number: {noteEvent.NoteNumber}, key: {_keyMappingsDictionary[noteNumberInt]}");
+                        AddInputLogMessages($"Note number: {noteEvent.NoteNumber}, key: {_keyMappingsDictionary[noteNumberInt]}, Time: {DateTime.Now.Millisecond}");
+                        
+                        if (!_chordTimerIsRunning)
+                        {
+                            _chordTimerIsRunning = true;
+                            _chordCollection += Char.ToLower(_keyMappingsDictionary[noteNumberInt]);
+                            var t = Task.Run(async delegate
+                            {
+                                await Task.Delay(TimeSpan.FromMilliseconds(20));
 
-                        inputLogTextBox.Invoke(() => inputLogTextBox.Lines = _inputLogMessages.ToArray());
+                                _chordTimerIsRunning = false;
 
-                        SendKeys.SendWait(Char.ToLower(_keyMappingsDictionary[noteNumberInt]).ToString());
+                                foreach(var key in _chordCollection)
+                                {
+                                    SendKeys.SendWait(key.ToString());
+                                    await Task.Delay(TimeSpan.FromMilliseconds(10));
+                                }
+                                
+                                _chordCollection = string.Empty;
+                            });
+                        }
+                        else
+                        {
+                            _chordCollection += Char.ToLower(_keyMappingsDictionary[noteNumberInt]);
+                        }
                     }
                 }
             }
@@ -166,6 +188,8 @@ namespace KeyboardToKeystrokes
             }
 
             _inputLogMessages.Insert(0, message);
+
+            inputLogTextBox.Invoke(() => inputLogTextBox.Lines = _inputLogMessages.ToArray());
         }
 
         #endregion
