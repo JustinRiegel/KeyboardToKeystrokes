@@ -12,37 +12,122 @@ namespace KeyboardToKeystrokes
         private Dictionary<int, char> _keyMappingsDictionary = new Dictionary<int, char>();
         private IMappingsManager _mappingsManager = new MappingsManager();
 
+        private bool _inputDeviceIsSelected = false;
+
         public KeyboardToKeystrokes()
         {
             InitializeComponent();
 
-            if (InputDevice.GetAll().Count > 0)
-            {
-                //Piaggero-1
-                _inputDevice = InputDevice.GetByName("Piaggero-1");
-                _inputDevice.EventReceived += OnMidiEventReceived;
-            }
-
             _keyMappingsDictionary = _mappingsManager.LoadMappingsFromFile();
 
+            this.HandleCreated += KeyboardToKeystrokes_HandleCreated;
             this.Disposed += DisposeInputDevice;
             this.FormClosing += KeyboardToKeystrokes_FormClosing;
         }
+
+        private void KeyboardToKeystrokes_HandleCreated(object? sender, EventArgs e)
+        {
+            PopulateInputDeviceCombobox();
+        }
+
+        #region Device selection
+
+        private void PopulateInputDeviceCombobox()
+        {
+            inputDeviceCombobox.Items.Clear();
+
+            if (InputDevice.GetAll().Count > 0)
+            {
+                var inputDevices = InputDevice.GetAll().Select(i => i.Name).ToArray();
+
+                inputDeviceCombobox.Items.AddRange(inputDevices);
+                inputDeviceCombobox.SelectedIndex = 0;
+                selectInputDeviceButton.Enabled = true;
+            }
+            else
+            {
+                selectInputDeviceButton.Enabled = false;
+            }
+        }
+
+        private void selectInputDeviceButton_Click(object sender, EventArgs e)
+        {
+            //if input device has not been selected yet, then it is currently being selected
+            if (!_inputDeviceIsSelected)
+            {
+                try
+                {
+                    string deviceName = inputDeviceCombobox.SelectedItem.ToString()!;
+                    _inputDevice = InputDevice.GetByName(deviceName);
+                    _inputDevice.EventReceived += OnMidiEventReceived;
+                }
+                catch(ArgumentException)
+                {
+                    MessageBox.Show("The device you are attempting to use is no longer available. Please select a different one.");
+                    PopulateInputDeviceCombobox();
+                    return;
+                }
+            }
+            else
+            {
+                if (_inputDevice != null)
+                {
+                    _inputDevice.EventReceived -= OnMidiEventReceived;
+                }
+            }
+
+            _inputDeviceIsSelected = !_inputDeviceIsSelected;
+
+            ToggleEnableOfDeviceSelectionControls(_inputDeviceIsSelected);
+        }
+
+        private void ToggleEnableOfDeviceSelectionControls(bool deviceSelected)
+        {
+            if (deviceSelected)
+            {
+                inputDeviceCombobox.Enabled = false;
+                selectInputDeviceButton.Text = "Select new device";
+                listeningGroupBox.Enabled = true;
+                startListeningButton.Enabled = true;
+                stopListeningButton.Enabled = false;
+            }
+            else
+            {
+                inputDeviceCombobox.Enabled = true;
+                selectInputDeviceButton.Text = "Use this device";
+                listeningGroupBox.Enabled = false;
+                startListeningButton.Enabled = false;
+                stopListeningButton.Enabled = true;
+            }
+        }
+
+        private void refreshInputDeviceListButton_Click(object sender, EventArgs e)
+        {
+            PopulateInputDeviceCombobox();
+        }
+
+        #endregion
 
         #region Listening
 
         private void startListeningButton_Click(object sender, EventArgs e)
         {
-            _inputDevice?.StartEventsListening();
-            startListeningButton.Enabled = false;
-            stopListeningButton.Enabled = true;
+            if (_inputDevice != null)
+            {
+                _inputDevice.StartEventsListening();
+                startListeningButton.Enabled = false;
+                stopListeningButton.Enabled = true;
+            }
         }
 
         private void stopListeningButton_Click(object sender, EventArgs e)
         {
-            _inputDevice?.StopEventsListening();
-            startListeningButton.Enabled = true;
-            stopListeningButton.Enabled = false;
+            if (_inputDevice != null)
+            {
+                _inputDevice.StopEventsListening();
+                startListeningButton.Enabled = true;
+                stopListeningButton.Enabled = false;
+            }
         }
 
         private void OnMidiEventReceived(object? sender, MidiEventReceivedEventArgs e)
