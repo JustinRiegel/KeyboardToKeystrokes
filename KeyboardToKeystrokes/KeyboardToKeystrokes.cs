@@ -165,7 +165,7 @@ namespace KeyboardToKeystrokes
                                 foreach(var key in _chordCollection)
                                 {
                                     SendKeys.SendWait(key.ToString());
-                                    await Task.Delay(TimeSpan.FromMilliseconds(10));
+                                    await Task.Delay(TimeSpan.FromMilliseconds(1));
                                 }
                                 
                                 _chordCollection = string.Empty;
